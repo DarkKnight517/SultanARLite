@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Sultan AR</string>
+    <string name="history_prompt">История команд</string>
+
+</resources>

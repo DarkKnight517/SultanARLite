@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/projectTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Проект: Безымянный"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <EditText
+        android:id="@+id/codeInput"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:hint="Введите код здесь..."
+        android:gravity="top|start"
+        android:background="@android:drawable/editbox_background"
+        android:padding="8dp"
+        android:inputType="textMultiLine"
+        android:textSize="14sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp">
+
+        <Button
+            android:id="@+id/runButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="▶ Запуск" />
+
+        <Button
+            android:id="@+id/saveButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="💾 Сохранить"
+            android:layout_marginStart="8dp" />
+
+        <Button
+            android:id="@+id/testButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🧪 Тестировать"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginBottom="8dp">
+
+        <Button
+            android:id="@+id/voiceInputButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎤 Голосовая команда" />
+
+        <Button
+            android:id="@+id/repeatLastButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⏮ Повтор"
+            android:layout_marginStart="8dp" />
+
+        <Button
+            android:id="@+id/suggestButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="💡 Предложить"
+            android:layout_marginStart="8dp" />
+
+        <Button
+            android:id="@+id/teachButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🧠 Научить Альтаира"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/virtualDeviceScreen"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:background="#EEEEEE"
+        android:layout_marginBottom="8dp" />
+
+    <Spinner
+        android:id="@+id/historySpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:prompt="@string/history_prompt" />
+
+    <TextView
+        android:id="@+id/activityReport"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Ваш стиль работы будет показан здесь"
+        android:textSize="13sp"
+        android:textColor="#222222"
+        android:padding="6dp"
+        android:background="#FFF7E1"
+        android:layout_marginBottom="6dp" />
+
+    <TextView
+        android:id="@+id/recommendationTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Рекомендация:"
+        android:textStyle="bold"
+        android:layout_marginBottom="2dp" />
+
+    <TextView
+        android:id="@+id/recommendationText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Рекомендация появится здесь"
+        android:textSize="13sp"
+        android:background="#F0F7FF"
+        android:padding="6dp" />
+
+    <Button
+        android:id="@+id/acceptRecommendationButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Выполнить рекомендацию"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/adviceTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Совет Альтаира:"
+        android:textStyle="bold"
+        android:layout_marginBottom="2dp" />
+
+    <TextView
+        android:id="@+id/adviceText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Здесь будет персональный совет"
+        android:textSize="13sp"
+        android:background="#E8F8F5"
+        android:padding="6dp" />
+
+    <Button
+        android:id="@+id/acceptAdviceButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Выполнить совет"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/logOutput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Лог будет здесь..."
+        android:textSize="12sp"
+        android:background="#222222"
+        android:textColor="#FFFFFF"
+        android:padding="8dp" />
+
+</LinearLayout>
