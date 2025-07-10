@@ -1,151 +1,178 @@
-package com.example.sultanarlite
 
-import android.app.Activity
-import android.content.Intent
-import android.speech.RecognizerIntent
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+package com.example.sultanarlite.ui
+
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.sultanarlite.AltairUIController
+import com.example.sultanarlite.AltairUIScreen
+import com.example.sultanarlite.AltairUIState
+import java.text.SimpleDateFormat
+import java.util.*
+
+enum class DevTab { MAIN, DEVLOG, NET, GOAL }
 
 @Composable
-fun DialogScreen(
-    viewModel: MainViewModel,
-    altairController: AltairUIController
-) {
-    val context = LocalContext.current
-    var commandText by remember { mutableStateOf("") }
+fun AltairDevSpaceScreen(altairController: AltairUIController) {
+    var tab by remember { mutableStateOf(DevTab.MAIN) }
     val uiState by altairController.uiState.collectAsState()
-
-    val speechLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val spokenText = result.data
-                ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-                ?.firstOrNull()
-
-            spokenText?.let {
-                commandText = it
-                altairController.handleCommand(it)
-                Toast.makeText(context, "📤 Команда отправлена", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
 
     Column(
         modifier = Modifier
-            .padding(16.dp)
-            .fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .fillMaxSize()
+            .background(uiState.backgroundColor)
+            .padding(24.dp)
     ) {
-        Text(text = "Голосовой ИИ Альтаир", style = MaterialTheme.typography.headlineSmall)
-
-        // Голосовой ввод
-        Button(onClick = {
-            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-            intent.putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-            )
-            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ru-RU")
-            speechLauncher.launch(intent)
-        }) {
-            Text("🎙️ Говори команду")
-        }
-
-        // Поле для ввода текста команды
-        OutlinedTextField(
-            value = commandText,
-            onValueChange = { commandText = it },
-            label = { Text("Введи команду...") },
-            modifier = Modifier.fillMaxWidth(),
-            maxLines = 2,
-            singleLine = false
+        Text(
+            text = "Лаборатория ИИ Альтаира",
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color(0xFFFFE4E1),
+            modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = {
-                if (commandText.isNotBlank()) {
-                    altairController.handleCommand(commandText)
-                    commandText = ""
-                }
-            }) {
-                Text("Выполнить")
-            }
-            Button(onClick = {
-                if (commandText.isNotBlank()) {
-                    altairController.speak(commandText)
-                }
-            }) {
-                Text("Озвучить")
-            }
-            Button(onClick = {
-                altairController.handleCommand("очистить экран")
-            }) {
-                Text("Очистить")
-            }
-        }
-
-        // Быстрые команды
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = {
-                altairController.handleCommand("добавь текст Пример текста")
-            }) {
-                Text("Добавить текст")
-            }
-            Button(onClick = {
-                altairController.handleCommand("показать уведомление Тестовое уведомление")
-            }) {
-                Text("Показать уведомление")
-            }
-            Button(onClick = {
-                altairController.handleCommand("поменяй фон")
-            }) {
-                Text("Сменить фон")
-            }
+        Row(Modifier.padding(bottom = 12.dp)) {
+            TabButton("Основное", tab == DevTab.MAIN, { tab = DevTab.MAIN }, Modifier.weight(1f).padding(end = 4.dp))
+            TabButton("DevLog", tab == DevTab.DEVLOG, { tab = DevTab.DEVLOG }, Modifier.weight(1f).padding(end = 4.dp))
+            TabButton("Интернет", tab == DevTab.NET, { tab = DevTab.NET }, Modifier.weight(1f).padding(end = 4.dp))
+            TabButton("Цель/Стратегия", tab == DevTab.GOAL, { tab = DevTab.GOAL }, Modifier.weight(1f))
         }
 
         Spacer(Modifier.height(8.dp))
-        Divider()
-        Spacer(Modifier.height(8.dp))
 
-        // История команд (кроме JSON)
-        Text("История команд:", style = MaterialTheme.typography.titleMedium)
-        uiState.commandHistory
-            .filter { it.type != com.example.sultanarlite.model.CommandType.JSON }
-            .reversed()
-            .take(10)
-            .forEach {
+        Box(Modifier.weight(1f)) {
+            val scrollState = rememberScrollState()
+            Box(Modifier.fillMaxSize().verticalScroll(scrollState)) {
+                when (tab) {
+                    DevTab.MAIN -> MainAltairTab(uiState, altairController)
+                    DevTab.DEVLOG -> DevLogTab(uiState)
+                    DevTab.NET -> NetTab(uiState, altairController)
+                    DevTab.GOAL -> GoalTab(uiState, altairController)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TabButton(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (selected) Color(0xFFD7BFAE) else Color(0xFFBDBDBD)
+        ),
+        modifier = modifier
+    ) {
+        Text(text)
+    }
+}
+
+@Composable
+private fun MainAltairTab(
+    uiState: AltairUIState,
+    controller: AltairUIController
+) {
+    AltairUIScreen(controller)
+}
+
+@Composable
+private fun DevLogTab(uiState: AltairUIState) {
+    val dateFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
+    Column {
+        Text("Журнал действий DevLog:", color = Color.Yellow, fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
+        if (uiState.commandHistory.isEmpty()) {
+            Text("Журнал пуст", color = Color.Gray)
+        } else {
+            uiState.commandHistory.reversed().forEach { log ->
                 Text(
-                    "${it.message} [${it.status}] — ${it.details ?: ""}",
-                    style = MaterialTheme.typography.bodySmall
+                    text = "[${dateFormat.format(Date(log.timestamp))}] ${log.type}: ${log.message} (${log.status}) ${log.details.orEmpty()}",
+                    color = when (log.status) {
+                        com.example.sultanarlite.model.CommandStatus.SUCCESS -> Color(0xFFA5FFAB)
+                        com.example.sultanarlite.model.CommandStatus.ERROR -> Color.Red
+                        else -> Color.LightGray
+                    },
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(bottom = 2.dp)
                 )
             }
+        }
+    }
+}
 
-        // Вывод текстовых элементов
+@Composable
+private fun NetTab(
+    uiState: AltairUIState,
+    controller: AltairUIController
+) {
+    var searchText by remember { mutableStateOf("") }
+    Column {
+        Text("Интернет-доступ: ${if (uiState.internetEnabled) "ВКЛЮЧЕН" else "выключен"}", color = Color.Cyan)
+        Row(Modifier.padding(vertical = 8.dp)) {
+            Button(
+                onClick = { controller.setInternetEnabled(true) },
+                enabled = !uiState.internetEnabled,
+                colors = ButtonDefaults.buttonColors(Color(0xFF7AEBAE)),
+                modifier = Modifier.weight(1f).padding(end = 4.dp)
+            ) { Text("Включить интернет") }
+            Button(
+                onClick = { controller.setInternetEnabled(false) },
+                enabled = uiState.internetEnabled,
+                colors = ButtonDefaults.buttonColors(Color(0xFFF78F80)),
+                modifier = Modifier.weight(1f)
+            ) { Text("Отключить интернет") }
+        }
         Spacer(Modifier.height(8.dp))
-        uiState.textElements.forEach {
-            Text(
-                it.text,
-                color = it.color,
-                fontSize = it.fontSize.sp
-            )
-        }
+        OutlinedTextField(
+            value = searchText,
+            onValueChange = { searchText = it },
+            label = { Text("Поиск в интернете") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Button(
+            onClick = {
+                if (searchText.isNotBlank()) controller.handleCommand("поиск в интернете $searchText")
+            },
+            enabled = uiState.internetEnabled,
+            modifier = Modifier.padding(top = 6.dp)
+        ) { Text("Выполнить поиск") }
 
-        // Уведомления (если есть)
-        uiState.notifications.forEach {
-            Text(
-                "⚡ ${it.text}",
-                color = it.color,
-                fontSize = it.fontSize.sp
-            )
+        if (uiState.lastInternetResult.isNotBlank()) {
+            Text("Результат поиска (начало):", color = Color.Yellow, fontSize = 14.sp, modifier = Modifier.padding(top = 12.dp))
+            Text(uiState.lastInternetResult.take(800), color = Color.White, fontSize = 13.sp)
         }
+    }
+}
+
+@Composable
+private fun GoalTab(
+    uiState: AltairUIState,
+    controller: AltairUIController
+) {
+    var goalText by remember { mutableStateOf(TextFieldValue(uiState.currentGoal)) }
+    Column {
+        Text("Текущая цель Альтаира:", color = Color.Yellow, fontSize = 16.sp)
+        OutlinedTextField(
+            value = goalText,
+            onValueChange = { goalText = it },
+            label = { Text("Цель/стратегия") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Button(
+            onClick = { controller.setGoal(goalText.text) },
+            modifier = Modifier.padding(top = 8.dp)
+        ) { Text("Изменить цель") }
+        Text("Текущая: ${uiState.currentGoal}", color = Color.LightGray, fontSize = 13.sp, modifier = Modifier.padding(top = 12.dp))
     }
 }
