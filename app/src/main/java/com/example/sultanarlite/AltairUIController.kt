@@ -8,19 +8,15 @@ import androidx.lifecycle.ViewModel
 import com.example.sultanarlite.model.CommandLog
 import com.example.sultanarlite.model.CommandType
 import com.example.sultanarlite.model.CommandStatus
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
+import com.example.sultanarlite.altair.core.AltairMemory
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.*
+import org.json.JSONObject
+import java.net.*
 import java.util.*
 import kotlin.random.Random
 
-// ИМПОРТ UI ELEMENTS:
-import com.example.sultanarlite.TextElement
-import com.example.sultanarlite.NotificationElement
-import com.example.sultanarlite.AltairUIState
-
-// --- Render events --- (можно оставить здесь, если только здесь используются)
 sealed class Render {
     data class AddText(val elem: TextElement) : Render()
     data class ShowNotification(val elem: NotificationElement) : Render()
@@ -41,18 +37,18 @@ class AltairUIController(private val context: Context) : ViewModel(), TextToSpee
         }
     }
 
-    // Методы управления новыми полями
     fun setInternetEnabled(enabled: Boolean) {
         _uiState.update { it.copy(internetEnabled = enabled) }
     }
+
     fun setLastInternetResult(result: String) {
         _uiState.update { it.copy(lastInternetResult = result) }
     }
+
     fun setGoal(goal: String) {
         _uiState.update { it.copy(currentGoal = goal) }
     }
 
-    // Универсальное добавление истории с метаданными
     fun addHistory(
         message: String,
         type: CommandType = CommandType.MANUAL,
@@ -71,13 +67,12 @@ class AltairUIController(private val context: Context) : ViewModel(), TextToSpee
     }
 
     fun addInjectedCode(code: String) {
-        addHistory(
-            message = code,
-            type = CommandType.INJECT,
-            status = CommandStatus.INFO,
-            details = "Код внедрён в историю"
-        )
+        addHistory(code, CommandType.INJECT, CommandStatus.INFO, "Код внедрён в историю")
         speak("Код внедрён в историю Альтаира")
+    }
+
+    fun interpret(text: String) {
+        handleCommand(text)
     }
 
     fun handleCommand(input: String) {
@@ -107,7 +102,6 @@ class AltairUIController(private val context: Context) : ViewModel(), TextToSpee
                 addHistory(command, CommandType.MANUAL, CommandStatus.SUCCESS, "Фон изменён")
                 speak("Фон изменён")
             }
-            // --- Дополнительно обработка команд для цели, интернет и т.д. ---
             command.startsWith("цель") -> {
                 val goal = command.removePrefix("цель").trim()
                 setGoal(goal)
@@ -117,13 +111,16 @@ class AltairUIController(private val context: Context) : ViewModel(), TextToSpee
             command.startsWith("интернет") -> {
                 val enable = command.contains("включи", ignoreCase = true)
                 setInternetEnabled(enable)
-                addHistory(
-                    command,
-                    CommandType.MANUAL,
-                    CommandStatus.SUCCESS,
-                    if (enable) "Интернет включен" else "Интернет выключен"
-                )
+                addHistory(command, CommandType.MANUAL, CommandStatus.SUCCESS, if (enable) "Интернет включен" else "Интернет выключен")
                 speak(if (enable) "Интернет включен" else "Интернет выключен")
+            }
+            command.startsWith("поиск в интернете") -> {
+                val query = command.removePrefix("поиск в интернете").trim()
+                performInternetSearch(query)
+                speak("Ищу в интернете: $query")
+            }
+            command == "изучи результат" -> {
+                learnFromInternetResult()
             }
             else -> {
                 addHistory(command, CommandType.MANUAL, CommandStatus.ERROR, "Команда не распознана")
@@ -132,94 +129,96 @@ class AltairUIController(private val context: Context) : ViewModel(), TextToSpee
         }
     }
 
-    fun executeJsonCommand(jsonString: String) {
+    fun executeJsonCommand(json: String) {
         try {
-            val root = json.parseToJsonElement(jsonString).jsonObject
-            val command = root["command"]?.jsonPrimitive?.contentOrNull
-            val args = root["args"]?.jsonObject
-
-            if (command == null) {
-                addHistory(
-                    message = jsonString,
-                    type = CommandType.JSON,
-                    status = CommandStatus.ERROR,
-                    details = "Ошибка: отсутствует команда"
-                )
-                speak("Ошибка: отсутствует команда")
-                return
-            }
+            val jsonObject = JSONObject(json)
+            val command = jsonObject.getString("command")
+            val args = jsonObject.optJSONObject("args")
 
             when (command) {
                 "add_text" -> {
-                    val text = args?.get("text")?.jsonPrimitive?.contentOrNull
-                    val color = args?.get("color")?.jsonPrimitive?.contentOrNull ?: "#FFFFFF"
-                    val fontSize = args?.get("fontSize")?.jsonPrimitive?.intOrNull ?: 16
-                    if (text != null) {
-                        render(Render.AddText(TextElement(text, Color(android.graphics.Color.parseColor(color)), fontSize)))
-                        addHistory(jsonString, CommandType.JSON, CommandStatus.SUCCESS, "Добавлен текст: $text")
-                        speak("Добавлен текст: $text")
-                    } else {
-                        addHistory(jsonString, CommandType.JSON, CommandStatus.ERROR, "Текст не найден")
-                        speak("Ошибка: текст не найден")
-                    }
+                    val text = args?.getString("text") ?: "нет текста"
+                    render(Render.AddText(TextElement(text)))
+                    addHistory("[json] $text", CommandType.JSON, CommandStatus.SUCCESS, "Добавлен текст через JSON")
+                    speak("Добавлен текст")
                 }
                 "show_notification" -> {
-                    val message = args?.get("message")?.jsonPrimitive?.contentOrNull
-                    val color = args?.get("color")?.jsonPrimitive?.contentOrNull ?: "#FFD700"
-                    val fontSize = args?.get("fontSize")?.jsonPrimitive?.intOrNull ?: 16
-                    if (message != null) {
-                        render(Render.ShowNotification(NotificationElement(message, Color(android.graphics.Color.parseColor(color)), fontSize)))
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                        addHistory(jsonString, CommandType.JSON, CommandStatus.SUCCESS, "Уведомление: $message")
-                        speak("Уведомление: $message")
-                    } else {
-                        addHistory(jsonString, CommandType.JSON, CommandStatus.ERROR, "Сообщение не найдено")
-                        speak("Ошибка: сообщение не найдено")
-                    }
-                }
-                "clear_screen" -> {
-                    render(Render.ClearScreen)
-                    addHistory(jsonString, CommandType.JSON, CommandStatus.SUCCESS, "Экран очищен")
-                    speak("Экран очищен")
-                }
-                "change_background" -> {
-                    render(Render.ChangeBackground)
-                    addHistory(jsonString, CommandType.JSON, CommandStatus.SUCCESS, "Фон изменён")
-                    speak("Фон изменён")
-                }
-                // Пример для управления интернетом и целью через JSON
-                "set_internet_enabled" -> {
-                    val enabled = args?.get("enabled")?.jsonPrimitive?.booleanOrNull ?: false
-                    setInternetEnabled(enabled)
-                    addHistory(jsonString, CommandType.JSON, CommandStatus.SUCCESS, "Интернет: $enabled")
-                    speak(if (enabled) "Интернет включен" else "Интернет выключен")
-                }
-                "set_goal" -> {
-                    val goal = args?.get("goal")?.jsonPrimitive?.contentOrNull.orEmpty()
-                    setGoal(goal)
-                    addHistory(jsonString, CommandType.JSON, CommandStatus.SUCCESS, "Цель изменена: $goal")
-                    speak("Цель изменена")
-                }
-                "set_last_internet_result" -> {
-                    val result = args?.get("result")?.jsonPrimitive?.contentOrNull.orEmpty()
-                    setLastInternetResult(result)
-                    addHistory(jsonString, CommandType.JSON, CommandStatus.SUCCESS, "Результат поиска обновлён")
+                    val text = args?.getString("text") ?: "уведомление"
+                    render(Render.ShowNotification(NotificationElement(text)))
+                    addHistory("[json] $text", CommandType.JSON, CommandStatus.SUCCESS, "Показано уведомление")
+                    speak("Уведомление показано")
                 }
                 else -> {
-                    addHistory(jsonString, CommandType.JSON, CommandStatus.ERROR, "Неизвестная команда: $command")
-                    speak("Неизвестная команда: $command")
+                    addHistory("[json] Неизвестная команда: $command", CommandType.JSON, CommandStatus.ERROR)
+                    speak("Неизвестная JSON-команда")
                 }
             }
         } catch (e: Exception) {
-            addHistory(
-                message = jsonString,
-                type = CommandType.JSON,
-                status = CommandStatus.ERROR,
-                details = "Ошибка JSON: ${e.message}"
-            )
-            speak("Ошибка JSON: ${e.message}")
-            Toast.makeText(context, "Ошибка в формате JSON", Toast.LENGTH_SHORT).show()
+            addHistory("[json] Ошибка JSON: ${e.message}", CommandType.JSON, CommandStatus.ERROR)
+            speak("Ошибка при разборе JSON")
         }
+    }
+
+    private fun performInternetSearch(query: String) {
+        val encoded = URLEncoder.encode(query, "UTF-8")
+        val url = "https://duckduckgo.com/html/?q=$encoded"
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val connection = URL(url).openConnection() as HttpURLConnection
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+                val html = connection.inputStream.bufferedReader().readText()
+                connection.disconnect()
+
+                val resultText = parseHtmlResults(html)
+                setLastInternetResult(resultText)
+                addHistory("поиск в интернете $query", CommandType.MANUAL, CommandStatus.SUCCESS, "Получено ${resultText.length} символов")
+                speak("Результаты поиска готовы")
+            } catch (e: Exception) {
+                setLastInternetResult("Ошибка при подключении: ${e.message}")
+                addHistory("поиск в интернете $query", CommandType.MANUAL, CommandStatus.ERROR, "Ошибка: ${e.message}")
+                speak("Ошибка при поиске")
+            }
+        }
+    }
+
+    private fun parseHtmlResults(html: String): String {
+        val results = Regex("<a[^>]+class=\"[^\"=]*result__a[^>]*\"[^>]*>(.*?)</a>")
+            .findAll(html)
+            .take(5)
+            .joinToString("\n") {
+                val title = it.groupValues[1]
+                    .replace(Regex("<[^>]*>"), "")
+                    .replace("&nbsp;", " ")
+                "• $title"
+            }
+
+        return if (results.isBlank()) "Результаты не найдены" else results
+    }
+
+    fun learnFromInternetResult() {
+        val content = _uiState.value.lastInternetResult
+        if (content.isBlank()) {
+            speak("Нет данных для обучения")
+            return
+        }
+
+        val keywords = content.lines()
+            .map { it.replace("•", "").trim() }
+            .filter { it.length > 10 }
+            .map { it.take(50) }
+
+        if (keywords.isEmpty()) {
+            speak("Недостаточно информации для обучения")
+            return
+        }
+
+        AltairMemory.knownSkills.addAll(keywords)
+        AltairMemory.savePatch(content)
+        AltairMemory.save()
+        speak("Альтаир изучил новый материал")
+        addHistory("Изучен результат", CommandType.MANUAL, CommandStatus.SUCCESS, "${keywords.size} знаний добавлено")
     }
 
     private fun render(action: Render) {
@@ -249,7 +248,6 @@ class AltairUIController(private val context: Context) : ViewModel(), TextToSpee
     fun speak(text: String) {
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
     }
-
 
     override fun onCleared() {
         super.onCleared()

@@ -6,8 +6,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.collectAsState
+import com.example.sultanarlite.model.CommandType
 
 @Composable
 fun AltairLabScreen(controller: AltairUIController) {
@@ -60,13 +61,12 @@ fun AltairLabScreen(controller: AltairUIController) {
 
         Text("История JSON-команд:", style = MaterialTheme.typography.titleMedium)
         uiState.commandHistory
-            .filter { it.message.startsWith("[json]") }
+            .filter { it.type == CommandType.JSON } // ✅ правильно
             .reversed()
             .take(5)
             .forEach {
                 Text(it.message.removePrefix("[json] "), style = MaterialTheme.typography.bodySmall)
             }
-
 
     }
 }

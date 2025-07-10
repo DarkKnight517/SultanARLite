@@ -1,0 +1,13 @@
+{
+  "trainerVersion": "1.1.0",
+  "patches": [
+    {
+      "target": "AltairAutoTrainer.kt",
+      "action": "replace",
+      "url": "https://raw.githubusercontent.com/DarkKnight517/altair-updates/main/AltairAutoTrainer.kt"
+    }
+  ],
+  "memoryPatch": {
+    "url": "https://raw.githubusercontent.com/DarkKnight517/altair-updates/main/memory_patch_0710.json"
+  }
+}

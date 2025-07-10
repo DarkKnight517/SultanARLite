@@ -35,58 +35,45 @@ fun AltairDevSpaceScreen(altairController: AltairUIController) {
             color = Color(0xFFFFE4E1),
             modifier = Modifier.padding(bottom = 16.dp)
         )
+
         Row(Modifier.padding(bottom = 12.dp)) {
-            Button(
-                onClick = { tab = DevTab.MAIN },
-                colors = ButtonDefaults.buttonColors(if (tab == DevTab.MAIN) Color(0xFFD7BFAE) else Color(0xFFBDBDBD)),
-                modifier = Modifier.weight(1f).padding(end = 4.dp)
-            ) { Text("Основное") }
-            Button(
-                onClick = { tab = DevTab.DEVLOG },
-                colors = ButtonDefaults.buttonColors(if (tab == DevTab.DEVLOG) Color(0xFFD7BFAE) else Color(0xFFBDBDBD)),
-                modifier = Modifier.weight(1f).padding(end = 4.dp)
-            ) { Text("DevLog") }
-            Button(
-                onClick = { tab = DevTab.NET },
-                colors = ButtonDefaults.buttonColors(if (tab == DevTab.NET) Color(0xFFD7BFAE) else Color(0xFFBDBDBD)),
-                modifier = Modifier.weight(1f).padding(end = 4.dp)
-            ) { Text("Интернет") }
-            Button(
-                onClick = { tab = DevTab.GOAL },
-                colors = ButtonDefaults.buttonColors(if (tab == DevTab.GOAL) Color(0xFFD7BFAE) else Color(0xFFBDBDBD)),
-                modifier = Modifier.weight(1f)
-            ) { Text("Цель/Стратегия") }
+            TabButton("Основное", tab == DevTab.MAIN, { tab = DevTab.MAIN }, Modifier.weight(1f).padding(end = 4.dp))
+            TabButton("DevLog", tab == DevTab.DEVLOG, { tab = DevTab.DEVLOG }, Modifier.weight(1f).padding(end = 4.dp))
+            TabButton("Интернет", tab == DevTab.NET, { tab = DevTab.NET }, Modifier.weight(1f).padding(end = 4.dp))
+            TabButton("Цель/Стратегия", tab == DevTab.GOAL, { tab = DevTab.GOAL }, Modifier.weight(1f))
         }
+
         Spacer(Modifier.height(8.dp))
-        // Прокрутка добавлена для каждой вкладки (все через отдельный ScrollState)
+
         Box(Modifier.weight(1f)) {
-            when (tab) {
-                DevTab.MAIN -> {
-                    val scrollState = rememberScrollState()
-                    Box(Modifier.fillMaxSize().verticalScroll(scrollState)) {
-                        MainAltairTab(uiState, altairController)
-                    }
-                }
-                DevTab.DEVLOG -> {
-                    val scrollState = rememberScrollState()
-                    Box(Modifier.fillMaxSize().verticalScroll(scrollState)) {
-                        DevLogTab(uiState)
-                    }
-                }
-                DevTab.NET -> {
-                    val scrollState = rememberScrollState()
-                    Box(Modifier.fillMaxSize().verticalScroll(scrollState)) {
-                        NetTab(uiState, altairController)
-                    }
-                }
-                DevTab.GOAL -> {
-                    val scrollState = rememberScrollState()
-                    Box(Modifier.fillMaxSize().verticalScroll(scrollState)) {
-                        GoalTab(uiState, altairController)
-                    }
+            val scrollState = rememberScrollState()
+            Box(Modifier.fillMaxSize().verticalScroll(scrollState)) {
+                when (tab) {
+                    DevTab.MAIN -> MainAltairTab(uiState, altairController)
+                    DevTab.DEVLOG -> DevLogTab(uiState)
+                    DevTab.NET -> NetTab(uiState, altairController)
+                    DevTab.GOAL -> GoalTab(uiState, altairController)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun TabButton(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (selected) Color(0xFFD7BFAE) else Color(0xFFBDBDBD)
+        ),
+        modifier = modifier
+    ) {
+        Text(text)
     }
 }
 
@@ -95,7 +82,6 @@ private fun MainAltairTab(
     uiState: com.example.sultanarlite.AltairUIState,
     controller: AltairUIController
 ) {
-    // Весь лабораторный UI с внедрением кода и JSON-режимом
     AltairUIScreen(controller)
 }
 
@@ -103,25 +89,22 @@ private fun MainAltairTab(
 private fun DevLogTab(uiState: com.example.sultanarlite.AltairUIState) {
     val dateFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
     Column {
-        Text(
-            "Журнал действий DevLog:",
-            color = Color.Yellow,
-            fontSize = 18.sp,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+        Text("Журнал действий DevLog:", color = Color.Yellow, fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
         if (uiState.commandHistory.isEmpty()) {
             Text("Журнал пуст", color = Color.Gray)
-        } else uiState.commandHistory.reversed().forEach { log ->
-            Text(
-                text = "[${dateFormat.format(Date(log.timestamp))}] ${log.type}: ${log.message} (${log.status}) ${log.details.orEmpty()}",
-                color = when (log.status) {
-                    com.example.sultanarlite.model.CommandStatus.SUCCESS -> Color(0xFFA5FFAB)
-                    com.example.sultanarlite.model.CommandStatus.ERROR -> Color.Red
-                    else -> Color.LightGray
-                },
-                fontSize = 13.sp,
-                modifier = Modifier.padding(bottom = 2.dp)
-            )
+        } else {
+            uiState.commandHistory.reversed().forEach { log ->
+                Text(
+                    text = "[${dateFormat.format(Date(log.timestamp))}] ${log.type}: ${log.message} (${log.status}) ${log.details.orEmpty()}",
+                    color = when (log.status) {
+                        com.example.sultanarlite.model.CommandStatus.SUCCESS -> Color(0xFFA5FFAB)
+                        com.example.sultanarlite.model.CommandStatus.ERROR -> Color.Red
+                        else -> Color.LightGray
+                    },
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(bottom = 2.dp)
+                )
+            }
         }
     }
 }
@@ -148,13 +131,16 @@ private fun NetTab(
                 modifier = Modifier.weight(1f)
             ) { Text("Отключить интернет") }
         }
+
         Spacer(Modifier.height(8.dp))
+
         OutlinedTextField(
             value = searchText,
             onValueChange = { searchText = it },
             label = { Text("Поиск в интернете") },
             modifier = Modifier.fillMaxWidth()
         )
+
         Button(
             onClick = {
                 if (searchText.isNotBlank()) controller.handleCommand("поиск в интернете $searchText")
@@ -162,6 +148,12 @@ private fun NetTab(
             enabled = uiState.internetEnabled,
             modifier = Modifier.padding(top = 6.dp)
         ) { Text("Выполнить поиск") }
+
+        Button(
+            onClick = { controller.handleCommand("изучи результат") },
+            enabled = uiState.lastInternetResult.isNotBlank(),
+            modifier = Modifier.padding(top = 6.dp)
+        ) { Text("Изучить результат") }
 
         if (uiState.lastInternetResult.isNotBlank()) {
             Text("Результат поиска (начало):", color = Color.Yellow, fontSize = 14.sp, modifier = Modifier.padding(top = 12.dp))
@@ -188,11 +180,7 @@ private fun GoalTab(
             onClick = { controller.setGoal(goalText.text) },
             modifier = Modifier.padding(top = 8.dp)
         ) { Text("Изменить цель") }
-        Text(
-            "Текущая: ${uiState.currentGoal}",
-            color = Color.LightGray,
-            fontSize = 13.sp,
-            modifier = Modifier.padding(top = 12.dp)
-        )
+
+        Text("Текущая: ${uiState.currentGoal}", color = Color.LightGray, fontSize = 13.sp, modifier = Modifier.padding(top = 12.dp))
     }
 }

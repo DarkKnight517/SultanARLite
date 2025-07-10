@@ -1,7 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:orientation="vertical"
-             android:layout_width="match_parent"
-             android:layout_height="match_parent">
+    android:id="@+id/statePanel"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp">
 
+    <TextView
+        android:id="@+id/textConfidence"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Уверенность: 0%" />
+
+    <TextView
+        android:id="@+id/textLogic"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Логика: 0%" />
+
+    <TextView
+        android:id="@+id/textEmpathy"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Эмпатия: 0%" />
+
+    <TextView
+        android:id="@+id/textMemory"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingTop="8dp"
+        android:text="Часто используемые команды:" />
 </LinearLayout>

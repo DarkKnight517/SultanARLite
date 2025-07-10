@@ -12,27 +12,32 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+// Определение всех экранов навигации
 sealed class Screen(
     val route: String,
     val label: String,
     val icon: ImageVector
 ) {
-    object Dialog    : Screen("dialog",    "Диалог",      Icons.Filled.Chat)
-    object Memory    : Screen("memory",    "Память",      Icons.Filled.Memory)
-    object Voice     : Screen("voice",     "Голос",       Icons.Filled.Mic)
-    object History   : Screen("history",   "История",     Icons.Filled.History)
-    object Settings  : Screen("settings",  "Настройки",   Icons.Filled.Settings)
-    object Lab       : Screen("lab",       "Лаборатория ИИ Альтаира", Icons.Filled.Science)
-    object Evolution : Screen("evolution", "Развитие",    Icons.Filled.AutoAwesome)
+    object Dialog    : Screen("dialog",    "Диалог",       Icons.Filled.Chat)
+    object Memory    : Screen("memory",    "Память",       Icons.Filled.Memory)
+    object Voice     : Screen("voice",     "Голос",        Icons.Filled.Mic)
+    object History   : Screen("history",   "История",      Icons.Filled.History)
+    object Settings  : Screen("settings",  "Настройки",    Icons.Filled.Settings)
+    object Evolution : Screen("evolution", "Развитие",     Icons.Filled.AutoAwesome)
+    object DevSpace  : Screen("dev_space", "Лаборатория",  Icons.Filled.Build)
 
     companion object {
-        // Только объекты, никаких null, никакой динамики
-        val all: List<Screen> = listOf(Dialog, Memory, Voice, History, Settings, Lab, Evolution)
+        val all: List<Screen> = listOf(
+            Dialog, Memory, Voice, History, Settings, Evolution, DevSpace
+        )
+
     }
 }
 
+
+
+
 // Экран приветствия (Welcome)
-// Используйте этот вариант, т.к. он поддерживает onStartClicked
 @Composable
 fun WelcomeScreen(onStartClicked: () -> Unit) {
     Surface(modifier = Modifier.fillMaxSize()) {
@@ -43,25 +48,18 @@ fun WelcomeScreen(onStartClicked: () -> Unit) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Логотип можно раскомментировать при необходимости:
-            // Image(painter = painterResource(id = R.drawable.logo), contentDescription = null)
-
             Text(
                 text = "Добро пожаловать в Sultan AR Lite",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
-
             Spacer(modifier = Modifier.height(16.dp))
-
             Text(
                 text = "Голосовой ИИ-помощник с памятью, интеллектом и визуализацией.\n\nГотов к работе.",
                 fontSize = 16.sp,
                 lineHeight = 20.sp
             )
-
             Spacer(modifier = Modifier.height(32.dp))
-
             Button(
                 onClick = onStartClicked,
                 modifier = Modifier.fillMaxWidth(0.8f)

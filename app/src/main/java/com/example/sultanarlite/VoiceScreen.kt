@@ -16,24 +16,66 @@ fun VoiceScreen(viewModel: MainViewModel, altairController: AltairUIController) 
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("🔊 Озвучка текста", style = MaterialTheme.typography.headlineSmall)
+        Text("🎙️ Голосовой интерфейс", style = MaterialTheme.typography.headlineSmall)
 
         OutlinedTextField(
             value = textToSpeak,
             onValueChange = { textToSpeak = it },
-            label = { Text("Введите текст") },
+            label = { Text("Введите команду или текст") },
             modifier = Modifier.fillMaxWidth()
         )
 
-        Button(
-            onClick = {
-                if (textToSpeak.isNotBlank()) {
-                    altairController.speak(textToSpeak)
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("📢 Озвучить")
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = {
+                    if (textToSpeak.isNotBlank()) {
+                        altairController.interpret(textToSpeak)
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("✅ Выполнить")
+            }
+
+            Button(
+                onClick = {
+                    if (textToSpeak.isNotBlank()) {
+                        altairController.speak(textToSpeak)
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("📢 Озвучить")
+            }
+        }
+
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = {
+                    altairController.handleCommand("добавь текст $textToSpeak")
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("➕ Добавить текст")
+            }
+
+            Button(
+                onClick = {
+                    altairController.handleCommand("показать уведомление $textToSpeak")
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("🔔 Уведомление")
+            }
+
+            Button(
+                onClick = {
+                    altairController.handleCommand("очистить экран")
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("🧹 Очистить")
+            }
         }
     }
 }

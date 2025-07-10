@@ -1,7 +1,7 @@
 package com.example.sultanarlite.model
 
-enum class CommandType { MANUAL, JSON, INJECT, SYSTEM }
-enum class CommandStatus { SUCCESS, ERROR, INFO }
+import com.example.sultanarlite.model.CommandType
+import com.example.sultanarlite.model.CommandStatus
 
 data class CommandLog(
     val message: String,
